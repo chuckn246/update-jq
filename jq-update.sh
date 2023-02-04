@@ -54,7 +54,7 @@ case "${os}" in
     ;;
   *)
     printf '%s\n' "[ERROR] Unsupported OS. Exiting"
-    exit 1
+    clean_up
 esac
 
 
@@ -68,7 +68,7 @@ case :$PATH: in
     printf '%s\n' "[ERROR] ${bindir} was not found in \$PATH!"
     printf '%s\n' "[ERROR] Add ${bindir} to PATH or select another directory to install to"
     tput sgr0
-    exit 1
+    clean_up
     ;;
 esac
 
@@ -81,7 +81,6 @@ cd "${tmpdir}" || exit
 if [ "${jq_version}" = "${jq_current_version}" ]; then
   printf '%s\n' "[INFO] Already using latest version. Exiting."
   clean_up
-  exit
 else
   printf '%s\n' "Installed Verision: ${jq_current_version}"
   printf '%s\n' "Latest Version: ${jq_version}"
@@ -119,14 +118,12 @@ if shasum -qc "${checksums}" --ignore-missing; then
     printf '\n%s\n' "[ERROR] Problem with signature!"
     tput sgr0
     clean_up
-    exit 1
   fi
 else
   tput setaf 1
   printf '\n%s\n' "[ERROR] Problem with checksum!"
   tput sgr0
   clean_up
-  exit 1
 fi
 
 
