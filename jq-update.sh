@@ -7,27 +7,27 @@
 os="$(uname -s)"
 bindir="$HOME/.local/bin"
 tmpdir="$(mktemp -d /tmp/jq.XXXXXXXX)"
-
-jq_version="1.6"
-jq_current_version="$(jq --version)"
-jq_url="https://github.com/stedolan/jq/releases/download/jq-${jq_version}/"
-
+jq_installed_version="$(jq --version)"
+jq_version_number="$(curl -s https://api.github.com/repos/stedolan/jq/releases/latest |\
+                     awk -F': ' '/tag_name/ { gsub(/\"|jq-|\,/,"",$2); print $2 }')"
+jq_version="jq-${jq_version_number}"
+jq_url="https://github.com/stedolan/jq/releases/download/${jq_version}/"
 gpg_key="4FD701D6FA9B3D2DF5AC935DAF19040C71523402"
 gpg_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/jq-release.key"
 
-
 # Define clean_up function
 clean_up () {
-  printf "Would you like to delete the downloaded files? (Yy/Nn) "
+  printf "Would you like to delete the tmpdir and the downloaded files? (Yy/Nn) "
   read -r choice
   case "${choice}" in
     [yY]|[yY]es)
       printf '%s\n\n' "Cleaning up install files"
       cd && rm -rf "${tmpdir}"
+      exit "${1}"
       ;;
     *)
       printf '%s\n\n' "Exiting without deleting files from ${tmpdir}"
-      exit 0
+      exit "${1}"
       ;;
   esac
 }
@@ -54,7 +54,7 @@ case "${os}" in
     ;;
   *)
     printf '%s\n' "[ERROR] Unsupported OS. Exiting"
-    clean_up
+    clean_up 1
 esac
 
 
@@ -68,7 +68,7 @@ case :$PATH: in
     printf '%s\n' "[ERROR] ${bindir} was not found in \$PATH!"
     printf '%s\n' "[ERROR] Add ${bindir} to PATH or select another directory to install to"
     tput sgr0
-    clean_up
+    clean_up 1
     ;;
 esac
 
@@ -78,11 +78,13 @@ esac
 #######################
 cd "${tmpdir}" || exit
 
-if [ "${jq_version}" = "${jq_current_version}" ]; then
-  printf '%s\n' "[INFO] Already using latest version. Exiting."
-  clean_up
+if [ "${jq_version}" = "${jq_installed_version}" ]; then
+  tput setaf 3
+  printf '%s\n' "[WARN] Already using latest version. Exiting."
+  tput sgr0
+  clean_up 0
 else
-  printf '%s\n' "Installed Verision: ${jq_current_version}"
+  printf '%s\n' "Installed Verision: ${jq_installed_version}"
   printf '%s\n' "Latest Version: ${jq_version}"
 fi
 
@@ -90,11 +92,11 @@ fi
 #######################
 # DOWNLOAD
 #######################
-printf '%s\n' "Downloading jq binary"
-sig_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/v${jq_version}/"
+printf '%s\n' "Downloading the jq binary and verification files"
+sig_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/v${jq_version_number}/"
 sig_file="${jq_binary}.asc"
 checksums="sha256sum.txt"
-sig_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/v${jq_version}/"
+sig_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/v${jq_version_number}/"
 
 # Download the things
 curl -sL -o "${tmpdir}/${jq_binary}" "${jq_url}/${jq_binary}"
@@ -107,7 +109,7 @@ curl -sL -o "${tmpdir}/${checksums}" "${sig_url}/${checksums}"
 #######################
 # Import jq's gpg signing key
 if ! gpg -k "${gpg_key}"; then
-    printf '\n%s\n\n' "[INFO] Importing GPG Key."
+    printf '\n%s\n\n' "Importing GPG Key."
     gpg --fetch-keys "${gpg_url}"
 fi
 
@@ -117,13 +119,13 @@ if shasum -qc "${checksums}" --ignore-missing; then
     tput setaf 1
     printf '\n%s\n' "[ERROR] Problem with signature!"
     tput sgr0
-    clean_up
+    clean_up 1
   fi
 else
   tput setaf 1
   printf '\n%s\n' "[ERROR] Problem with checksum!"
   tput sgr0
-  clean_up
+  clean_up 1
 fi
 
 
@@ -150,7 +152,7 @@ fi
 # VERSION CHECK
 #######################
 tput setaf 2
-printf '\n%s\n' "Old Version: ${jq_current_version}"
+printf '\n%s\n' "Old Version: ${jq_installed_version}"
 printf '%s\n\n' "Installed Version: $(jq --version)"
 tput sgr0
 
@@ -158,15 +160,17 @@ tput sgr0
 #######################
 # MAN PAGE
 #######################
+echo
 printf '%s\n' "I didn't compile the man page, but installed jq using homebrew and copied it from there"
 printf '%s\n' "brew install jq"
 printf '%s\n' "cp /opt/homebrew/Cellar/jq/1.6/share/man/man1/jq.1 ~/.local/share/man/man1"
 printf '%s\n' "brew uninstall jq"
+echo
 
 
 #######################
 # CLEAN UP
 #######################
-clean_up
+clean_up 0
 
 # vim: ft=sh ts=2 sts=2 sw=2 sr et
