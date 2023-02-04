@@ -4,29 +4,32 @@
 # Author: Chuck Nemeth
 # https://stedolan.github.io/jq/
 
-os="$(uname -s)"
-bindir="$HOME/.local/bin"
-tmpdir="$(mktemp -d /tmp/jq.XXXXXXXX)"
+bin_dir="$HOME/.local/bin"
+man_dir="$HOME/.local/share/man/man1"
+tmp_dir="$(mktemp -d /tmp/jq.XXXXXXXX)"
+
 jq_installed_version="$(jq --version)"
-jq_version_number="$(curl -s https://api.github.com/repos/stedolan/jq/releases/latest |\
+jq_version_number="$(curl -s https://api.github.com/repos/stedolan/jq/releases/latest | \
                      awk -F': ' '/tag_name/ { gsub(/\"|jq-|\,/,"",$2); print $2 }')"
 jq_version="jq-${jq_version_number}"
 jq_url="https://github.com/stedolan/jq/releases/download/${jq_version}/"
+jq_man="jq.1"
+
 gpg_key="4FD701D6FA9B3D2DF5AC935DAF19040C71523402"
 gpg_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/jq-release.key"
 
 # Define clean_up function
 clean_up () {
-  printf "Would you like to delete the tmpdir and the downloaded files? (Yy/Nn) "
+  printf "Would you like to delete the tmp_dir and the downloaded files? (Yy/Nn) "
   read -r choice
   case "${choice}" in
     [yY]|[yY]es)
       printf '%s\n\n' "Cleaning up install files"
-      cd && rm -rf "${tmpdir}"
+      cd && rm -rf "${tmp_dir}"
       exit "${1}"
       ;;
     *)
-      printf '%s\n\n' "Exiting without deleting files from ${tmpdir}"
+      printf '%s\n\n' "Exiting without deleting files from ${tmp_dir}"
       exit "${1}"
       ;;
   esac
@@ -36,7 +39,7 @@ clean_up () {
 #######################
 # OS CHECK
 #######################
-case "${os}" in
+case "$(uname -s)" in
   "Darwin")
       case "$(uname -p)" in
         "arm")
@@ -53,7 +56,9 @@ case "${os}" in
     jq_binary="jq-linux64"
     ;;
   *)
-    printf '%s\n' "[ERROR] Unsupported OS. Exiting"
+    tput setaf 1
+    printf '%s\n\n' "[ERROR] Unsupported OS. Exiting"
+    tput sgr0
     clean_up 1
 esac
 
@@ -62,11 +67,11 @@ esac
 # PATH CHECK
 #######################
 case :$PATH: in
-  *:"${bindir}":*)  ;;  # do nothing
+  *:"${bin_dir}":*)  ;;  # do nothing
   *)
     tput setaf 1
-    printf '%s\n' "[ERROR] ${bindir} was not found in \$PATH!"
-    printf '%s\n' "[ERROR] Add ${bindir} to PATH or select another directory to install to"
+    printf '%s\n' "[ERROR] ${bin_dir} was not found in \$PATH!"
+    printf '%s\n\n' "[ERROR] Add ${bin_dir} to PATH or select another directory to install to"
     tput sgr0
     clean_up 1
     ;;
@@ -76,11 +81,11 @@ esac
 #######################
 # VERSION CHECK
 #######################
-cd "${tmpdir}" || exit
+cd "${tmp_dir}" || exit
 
 if [ "${jq_version}" = "${jq_installed_version}" ]; then
   tput setaf 3
-  printf '%s\n' "[WARN] Already using latest version. Exiting."
+  printf '%s\n\n' "[WARN] Already using latest version. Exiting."
   tput sgr0
   clean_up 0
 else
@@ -99,9 +104,9 @@ checksums="sha256sum.txt"
 sig_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/v${jq_version_number}/"
 
 # Download the things
-curl -sL -o "${tmpdir}/${jq_binary}" "${jq_url}/${jq_binary}"
-curl -sL -o "${tmpdir}/${sig_file}" "${sig_url}/${sig_file}"
-curl -sL -o "${tmpdir}/${checksums}" "${sig_url}/${checksums}"
+curl -sL -o "${tmp_dir}/${jq_binary}" "${jq_url}/${jq_binary}"
+curl -sL -o "${tmp_dir}/${sig_file}" "${sig_url}/${sig_file}"
+curl -sL -o "${tmp_dir}/${checksums}" "${sig_url}/${checksums}"
 
 
 #######################
@@ -117,13 +122,13 @@ fi
 if shasum -qc "${checksums}" --ignore-missing; then
   if ! gpg --verify "${sig_file}" "${jq_binary}"; then
     tput setaf 1
-    printf '\n%s\n' "[ERROR] Problem with signature!"
+    printf '\n%s\n\n' "[ERROR] Problem with signature!"
     tput sgr0
     clean_up 1
   fi
 else
   tput setaf 1
-  printf '\n%s\n' "[ERROR] Problem with checksum!"
+  printf '\n%s\n\n' "[ERROR] Problem with checksum!"
   tput sgr0
   clean_up 1
 fi
@@ -133,8 +138,8 @@ fi
 # PREPARE
 #######################
 # Create bin dir if it doesn't exist
-if [ ! -d "${bindir}" ]; then
-  mkdir -p "${bindir}"
+if [ ! -d "${bin_dir}" ]; then
+  mkdir -p "${bin_dir}"
 fi
 
 
@@ -142,9 +147,9 @@ fi
 # INSTALL
 #######################
 # Install jq binary
-if [ -f "${tmpdir}/${jq_binary}" ]; then
-  mv "${tmpdir}/${jq_binary}" "${bindir}/jq"
-  chmod 700 "${bindir}/jq"
+if [ -f "${tmp_dir}/${jq_binary}" ]; then
+  mv "${tmp_dir}/${jq_binary}" "${bin_dir}/jq"
+  chmod 700 "${bin_dir}/jq"
 fi
 
 
@@ -160,12 +165,12 @@ tput sgr0
 #######################
 # MAN PAGE
 #######################
-echo
-printf '%s\n' "I didn't compile the man page, but installed jq using homebrew and copied it from there"
-printf '%s\n' "brew install jq"
-printf '%s\n' "cp /opt/homebrew/Cellar/jq/1.6/share/man/man1/jq.1 ~/.local/share/man/man1"
-printf '%s\n' "brew uninstall jq"
-echo
+if [ ! -f "${man_dir}/${jq_man}" ]; then
+  printf '\n%s\n' "I didn't compile the man page, but installed jq using homebrew and copied it from there"
+  printf '%s\n' "brew install jq"
+  printf '%s\n' "cp /opt/homebrew/Cellar/jq/1.6/share/man/man1/jq.1 ~/.local/share/man/man1"
+  printf '%s\n\n' "brew uninstall jq"
+fi
 
 
 #######################
