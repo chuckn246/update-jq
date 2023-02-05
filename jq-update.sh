@@ -8,7 +8,12 @@ bin_dir="$HOME/.local/bin"
 man_dir="$HOME/.local/share/man/man1"
 tmp_dir="$(mktemp -d /tmp/jq.XXXXXXXX)"
 
-jq_installed_version="$(jq --version)"
+if command -v jq >/dev/null; then
+  jq_installed_version="$(jq --version)"
+else
+  jq_installed_version="Not Installed"
+fi
+
 jq_version_number="$(curl -s https://api.github.com/repos/stedolan/jq/releases/latest | \
                      awk -F': ' '/tag_name/ { gsub(/\"|jq-|\,/,"",$2); print $2 }')"
 jq_version="jq-${jq_version_number}"
@@ -34,7 +39,6 @@ clean_up () {
       ;;
   esac
 }
-
 
 #######################
 # OS CHECK
@@ -90,7 +94,7 @@ if [ "${jq_version}" = "${jq_installed_version}" ]; then
   clean_up 0
 else
   printf '%s\n' "Installed Verision: ${jq_installed_version}"
-  printf '%s\n' "Latest Version: ${jq_version}"
+  printf '%s\n\n' "Latest Version: ${jq_version}"
 fi
 
 
@@ -113,12 +117,13 @@ curl -sL -o "${tmp_dir}/${checksums}" "${sig_url}/${checksums}"
 # VERIFY
 #######################
 # Import jq's gpg signing key
-if ! gpg -k "${gpg_key}"; then
+if ! gpg -k "${gpg_key}" >/dev/null; then
     printf '\n%s\n\n' "Importing GPG Key."
     gpg --fetch-keys "${gpg_url}"
 fi
 
 # Verify shasum and gpg signature
+printf '%s\n' "Verifying ${jq_binary}"
 if shasum -qc "${checksums}" --ignore-missing; then
   if ! gpg --verify "${sig_file}" "${jq_binary}"; then
     tput setaf 1
@@ -128,7 +133,7 @@ if shasum -qc "${checksums}" --ignore-missing; then
   fi
 else
   tput setaf 1
-  printf '\n%s\n\n' "[ERROR] Problem with checksum!"
+  printf '%s\n\n' "[ERROR] Problem with checksum!"
   tput sgr0
   clean_up 1
 fi
@@ -157,7 +162,7 @@ fi
 # VERSION CHECK
 #######################
 tput setaf 2
-printf '\n%s\n' "Old Version: ${jq_installed_version}"
+printf '\n%s\n' "Done!"
 printf '%s\n\n' "Installed Version: $(jq --version)"
 tput sgr0
 
