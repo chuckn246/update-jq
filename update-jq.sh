@@ -39,12 +39,12 @@ clean_up () {
   read -r choice
   case "${choice}" in
     [yY]|[yY]es)
-      printf '%s\n\n' "Cleaning up install files"
+      printf '%s\n' "Cleaning up install files"
       cd && rm -rf "${tmp_dir}"
       exit "${1}"
       ;;
     *)
-      printf '%s\n\n' "Exiting without deleting files from ${tmp_dir}"
+      printf '%s\n' "Exiting without deleting files from ${tmp_dir}"
       exit "${1}"
       ;;
   esac
@@ -120,7 +120,7 @@ if [ "${jq_version}" = "${jq_installed_version}" ]; then
   clean_up 0
 else
   printf '%s\n' "Installed Verision: ${jq_installed_version}"
-  printf '%s\n\n' "Latest Version: ${jq_version}"
+  printf '%s\n' "Latest Version: ${jq_version}"
 fi
 
 
@@ -140,7 +140,7 @@ curl -sL -o "${tmp_dir}/${sum_file}" "${sig_url}/${sum_file}"
 #######################
 # Import jq's gpg signing key
 if ! gpg -k "${gpg_key}" >/dev/null; then
-    printf '\n%s\n\n' "Importing GPG Key."
+    printf '\n%s\n' "Importing GPG Key."
     gpg --fetch-keys "${gpg_url}"
 fi
 
@@ -190,7 +190,7 @@ if [ ! -f "${man_dir}/${jq_man}" ]; then
   printf '\n%s\n' "I didn't compile the man page, but installed jq using homebrew and copied it from there"
   printf '%s\n' "brew install jq"
   printf '%s\n' "cp /opt/homebrew/Cellar/jq/1.6/share/man/man1/jq.1 ~/.local/share/man/man1"
-  printf '%s\n\n' "brew uninstall jq"
+  printf '%s\n' "brew uninstall jq"
 fi
 
 
