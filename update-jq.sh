@@ -4,6 +4,9 @@
 # Author: Chuck Nemeth
 # https://stedolan.github.io/jq/
 
+#######################
+# VARIABLES
+#######################
 bin_dir="$HOME/.local/bin"
 man_dir="$HOME/.local/share/man/man1"
 tmp_dir="$(mktemp -d /tmp/jq.XXXXXXXX)"
@@ -22,7 +25,14 @@ jq_man="jq.1"
 
 gpg_key="4FD701D6FA9B3D2DF5AC935DAF19040C71523402"
 gpg_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/jq-release.key"
+sig_file="${jq_binary}.asc"
+sig_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/v${jq_version_number}/"
+sum_file="sha256sum.txt"
 
+
+#######################
+# FUNCTIONS
+#######################
 # Define clean_up function
 clean_up () {
   printf "Would you like to delete the tmp_dir and the downloaded files? (Yy/Nn) "
@@ -39,6 +49,28 @@ clean_up () {
       ;;
   esac
 }
+
+# green output
+code_grn () {
+  tput setaf 2
+  printf '%s\n' "${1}"
+  tput sgr0
+}
+
+# red output
+code_red () {
+  tput setaf 1
+  printf '%s\n' "${1}"
+  tput sgr0
+}
+
+# yellow output
+code_yel () {
+  tput setaf 3
+  printf '%s\n' "${1}"
+  tput sgr0
+}
+
 
 #######################
 # OS CHECK
@@ -60,9 +92,7 @@ case "$(uname -s)" in
     jq_binary="jq-linux64"
     ;;
   *)
-    tput setaf 1
-    printf '%s\n\n' "[ERROR] Unsupported OS. Exiting"
-    tput sgr0
+    code_red "[ERROR] Unsupported OS. Exiting"
     clean_up 1
 esac
 
@@ -73,10 +103,8 @@ esac
 case :$PATH: in
   *:"${bin_dir}":*)  ;;  # do nothing
   *)
-    tput setaf 1
-    printf '%s\n' "[ERROR] ${bin_dir} was not found in \$PATH!"
-    printf '%s\n\n' "[ERROR] Add ${bin_dir} to PATH or select another directory to install to"
-    tput sgr0
+    code_red "[ERROR] ${bin_dir} was not found in \$PATH!"
+    code_red "Add ${bin_dir} to PATH or select another directory to install to"
     clean_up 1
     ;;
 esac
@@ -88,9 +116,7 @@ esac
 cd "${tmp_dir}" || exit
 
 if [ "${jq_version}" = "${jq_installed_version}" ]; then
-  tput setaf 3
-  printf '%s\n\n' "[WARN] Already using latest version. Exiting."
-  tput sgr0
+  code_yel "[WARN] Already using latest version. Exiting."
   clean_up 0
 else
   printf '%s\n' "Installed Verision: ${jq_installed_version}"
@@ -102,15 +128,11 @@ fi
 # DOWNLOAD
 #######################
 printf '%s\n' "Downloading the jq binary and verification files"
-sig_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/v${jq_version_number}/"
-sig_file="${jq_binary}.asc"
-checksums="sha256sum.txt"
-sig_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/v${jq_version_number}/"
 
 # Download the things
 curl -sL -o "${tmp_dir}/${jq_binary}" "${jq_url}/${jq_binary}"
 curl -sL -o "${tmp_dir}/${sig_file}" "${sig_url}/${sig_file}"
-curl -sL -o "${tmp_dir}/${checksums}" "${sig_url}/${checksums}"
+curl -sL -o "${tmp_dir}/${sum_file}" "${sig_url}/${sum_file}"
 
 
 #######################
@@ -124,17 +146,13 @@ fi
 
 # Verify shasum and gpg signature
 printf '%s\n' "Verifying ${jq_binary}"
-if shasum -qc "${checksums}" --ignore-missing; then
+if shasum -qc "${sum_file}" --ignore-missing; then
   if ! gpg --verify "${sig_file}" "${jq_binary}"; then
-    tput setaf 1
-    printf '\n%s\n\n' "[ERROR] Problem with signature!"
-    tput sgr0
+    code_red "[ERROR] Problem with signature!"
     clean_up 1
   fi
 else
-  tput setaf 1
-  printf '%s\n\n' "[ERROR] Problem with checksum!"
-  tput sgr0
+  code_red "[ERROR] Problem with checksum!"
   clean_up 1
 fi
 
@@ -161,10 +179,8 @@ fi
 #######################
 # VERSION CHECK
 #######################
-tput setaf 2
-printf '\n%s\n' "Done!"
-printf '%s\n\n' "Installed Version: $(jq --version)"
-tput sgr0
+code_grn "Done!"
+code_grn "Installed Version: $(jq --version)"
 
 
 #######################
