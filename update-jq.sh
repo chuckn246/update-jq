@@ -35,7 +35,7 @@ sum_file="sha256sum.txt"
 #######################
 # Define clean_up function
 clean_up () {
-  printf "Would you like to delete the tmp_dir and the downloaded files? (Yy/Nn) "
+  printf '%s' "Would you like to delete the tmp_dir and the downloaded files? (Yy/Nn) "
   read -r choice
   case "${choice}" in
     [yY]|[yY]es)
