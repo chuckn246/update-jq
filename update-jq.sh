@@ -116,7 +116,9 @@ esac
 cd "${tmp_dir}" || exit
 
 if [ "${jq_version}" = "${jq_installed_version}" ]; then
-  code_yel "[WARN] Already using latest version. Exiting."
+  printf '%s\n' "Installed Verision: ${jq_installed_version}"
+  printf '%s\n' "Latest Version: ${jq_version}"
+  code_yel "[INFO] Already using latest version. Exiting."
   clean_up 0
 else
   printf '%s\n' "Installed Verision: ${jq_installed_version}"
