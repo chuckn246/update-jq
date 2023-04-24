@@ -25,7 +25,6 @@ jq_man="jq.1"
 
 gpg_key="4FD701D6FA9B3D2DF5AC935DAF19040C71523402"
 gpg_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/jq-release.key"
-sig_file="${jq_binary}.asc"
 sig_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/v${jq_version_number}/"
 sum_file="sha256sum.txt"
 
@@ -133,7 +132,7 @@ printf '%s\n' "Downloading the jq binary and verification files"
 
 # Download the things
 curl -sL -o "${tmp_dir}/${jq_binary}" "${jq_url}/${jq_binary}"
-curl -sL -o "${tmp_dir}/${sig_file}" "${sig_url}/${sig_file}"
+curl -sL -o "${tmp_dir}/${jq_binary}.asc" "${sig_url}/${jq_binary}.asc"
 curl -sL -o "${tmp_dir}/${sum_file}" "${sig_url}/${sum_file}"
 
 
