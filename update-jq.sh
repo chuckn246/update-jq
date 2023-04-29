@@ -131,8 +131,9 @@ fi
 printf '%s\n' "Downloading the jq binary and verification files"
 
 # Download the things
+sig_file="${jq_binary}.asc"
 curl -sL -o "${tmp_dir}/${jq_binary}" "${jq_url}/${jq_binary}"
-curl -sL -o "${tmp_dir}/${jq_binary}.asc" "${sig_url}/${jq_binary}.asc"
+curl -sL -o "${tmp_dir}/${sig_file}" "${sig_url}/${sig_file}"
 curl -sL -o "${tmp_dir}/${sum_file}" "${sig_url}/${sum_file}"
 
 
