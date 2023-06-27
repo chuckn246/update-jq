@@ -17,7 +17,7 @@ else
   jq_installed_version="Not Installed"
 fi
 
-jq_version_number="$(curl -s https://api.github.com/repos/stedolan/jq/releases/latest | \
+jq_version_number="$(curl -Ls https://api.github.com/repos/stedolan/jq/releases/latest | \
                      awk -F': ' '/tag_name/ { gsub(/\"|jq-|\,/,"",$2); print $2 }')"
 jq_version="jq-${jq_version_number}"
 jq_url="https://github.com/stedolan/jq/releases/download/${jq_version}/"
