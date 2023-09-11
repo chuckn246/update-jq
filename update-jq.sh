@@ -127,10 +127,6 @@ fi
 #######################
 printf '%s\n' "Downloading the jq binary and verification files"
 
-code_yel "${jq_version}"
-code_yel "${jq_url}/${jq_binary}"
-code_yel "${jq_url}/${sum_file}"
-
 # Download the things
 curl -sL -o "${tmp_dir}/${jq_binary}" "${jq_url}/${jq_binary}"
 curl -sL -o "${tmp_dir}/${sum_file}" "${jq_url}/${sum_file}"
