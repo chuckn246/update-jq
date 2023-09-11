@@ -139,15 +139,13 @@ curl -sL -o "${tmp_dir}/${sum_file}" "${jq_url}/${sum_file}"
 #######################
 # VERIFY
 #######################
-# Verify shasum and gpg signature
+# Verify shasum
 printf '%s\n' "Verifying ${jq_binary}"
-#sums=$(awk -v var="${jq_binary}" '$0 ~ var { print $1, $2 }' "${sum_file}")
-sums=$(grep "${jq_binary}" "${sum_file}" | sed 's/ /  /g')
+sums=$(awk -v var="${jq_binary}" '$0 ~ var { gsub(/ /, "  ", $0); print }' "${sum_file}")
+#sums=$(grep "${jq_binary}" "${sum_file}" | sed 's/ /  /g')
 
 if ! echo "${sums}" | shasum -qc; then
   code_red "[ERROR] Problem with checksum!"
-  pwd
-  ls -l
   clean_up 1
 fi
 
