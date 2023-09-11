@@ -2,7 +2,7 @@
 
 # Description: Download, verify and install jq binary on Linux and Mac
 # Author: Chuck Nemeth
-# https://stedolan.github.io/jq/
+# https://jqlang.github.io/jq/
 
 #######################
 # VARIABLES
@@ -17,15 +17,12 @@ else
   jq_installed_version="Not Installed"
 fi
 
-jq_version_number="$(curl -Ls https://api.github.com/repos/stedolan/jq/releases/latest | \
+jq_version_number="$(curl -Ls https://api.github.com/repos/jqlang/jq/releases/latest | \
                      awk -F': ' '/tag_name/ { gsub(/\"|jq-|\,/,"",$2); print $2 }')"
 jq_version="jq-${jq_version_number}"
-jq_url="https://github.com/stedolan/jq/releases/download/${jq_version}/"
+jq_url="https://github.com/jqlang/jq/releases/download/${jq_version}"
 jq_man="jq.1"
 
-gpg_key="4FD701D6FA9B3D2DF5AC935DAF19040C71523402"
-gpg_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/jq-release.key"
-sig_url="https://raw.githubusercontent.com/stedolan/jq/master/sig/v${jq_version_number}/"
 sum_file="sha256sum.txt"
 
 
@@ -79,7 +76,7 @@ case "$(uname -s)" in
       case "$(uname -p)" in
         "arm")
           # Currently no arm releases
-          # See: https://github.com/stedolan/jq/issues/2386
+          # See: https://github.com/jqlang/jq/issues/2386
           jq_binary="jq-osx-amd64"
           ;;
         *)
@@ -130,31 +127,27 @@ fi
 #######################
 printf '%s\n' "Downloading the jq binary and verification files"
 
+code_yel "${jq_version}"
+code_yel "${jq_url}/${jq_binary}"
+code_yel "${jq_url}/${sum_file}"
+
 # Download the things
-sig_file="${jq_binary}.asc"
 curl -sL -o "${tmp_dir}/${jq_binary}" "${jq_url}/${jq_binary}"
-curl -sL -o "${tmp_dir}/${sig_file}" "${sig_url}/${sig_file}"
-curl -sL -o "${tmp_dir}/${sum_file}" "${sig_url}/${sum_file}"
+curl -sL -o "${tmp_dir}/${sum_file}" "${jq_url}/${sum_file}"
 
 
 #######################
 # VERIFY
 #######################
-# Import jq's gpg signing key
-if ! gpg -k "${gpg_key}" >/dev/null; then
-    printf '\n%s\n' "Importing GPG Key."
-    gpg --fetch-keys "${gpg_url}"
-fi
-
 # Verify shasum and gpg signature
 printf '%s\n' "Verifying ${jq_binary}"
-if shasum -qc "${sum_file}" --ignore-missing; then
-  if ! gpg --verify "${sig_file}" "${jq_binary}"; then
-    code_red "[ERROR] Problem with signature!"
-    clean_up 1
-  fi
-else
+#sums=$(awk -v var="${jq_binary}" '$0 ~ var { print $1, $2 }' "${sum_file}")
+sums=$(grep "${jq_binary}" "${sum_file}" | sed 's/ /  /g')
+
+if ! echo "${sums}" | shasum -qc; then
   code_red "[ERROR] Problem with checksum!"
+  pwd
+  ls -l
   clean_up 1
 fi
 
@@ -191,7 +184,7 @@ code_grn "Installed Version: $(jq --version)"
 if [ ! -f "${man_dir}/${jq_man}" ]; then
   printf '\n%s\n' "I didn't compile the man page, but installed jq using homebrew and copied it from there"
   printf '%s\n' "brew install jq"
-  printf '%s\n' "cp /opt/homebrew/Cellar/jq/1.6/share/man/man1/jq.1 ~/.local/share/man/man1"
+  printf '%s\n' "cp /opt/homebrew/Cellar/jq/${jq_version_number}/share/man/man1/jq.1 ~/.local/share/man/man1"
   printf '%s\n' "brew uninstall jq"
 fi
 
