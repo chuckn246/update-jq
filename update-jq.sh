@@ -21,6 +21,7 @@ jq_version_number="$(curl -Ls https://api.github.com/repos/jqlang/jq/releases/la
                      awk -F': ' '/tag_name/ { gsub(/\"|jq-|\,/,"",$2); print $2 }')"
 jq_version="jq-${jq_version_number}"
 jq_url="https://github.com/jqlang/jq/releases/download/${jq_version}"
+jq_man_url="https://raw.githubusercontent.com/jqlang/jq/master/jq.1.prebuilt"
 jq_man="jq.1"
 
 sum_file="sha256sum.txt"
@@ -145,6 +146,13 @@ fi
 # Create bin dir if it doesn't exist
 if [ ! -d "${bin_dir}" ]; then
   mkdir -p "${bin_dir}"
+  chmod 700 "${bin_dir}"
+fi
+
+# Create man dir if it doesn't exist
+if [ ! -d "${man_dir}" ]; then
+  mkdir -p "${man_dir}"
+  chmod 700 "${man_dir}"
 fi
 
 
@@ -159,21 +167,18 @@ fi
 
 
 #######################
+# MAN PAGE
+#######################
+printf '%s\n' "Installing jq man page"
+curl -s -o "${man_dir}/${jq_man}" "${jq_man_url}"
+chmod 600 "${man_dir}/${jq_man}"
+
+
+#######################
 # VERSION CHECK
 #######################
 code_grn "Done!"
 code_grn "Installed Version: $(jq --version)"
-
-
-#######################
-# MAN PAGE
-#######################
-if [ ! -f "${man_dir}/${jq_man}" ]; then
-  printf '\n%s\n' "I didn't compile the man page, but installed jq using homebrew and copied it from there"
-  printf '%s\n' "brew install jq"
-  printf '%s\n' "cp /opt/homebrew/Cellar/jq/${jq_version_number}/share/man/man1/jq.1 ~/.local/share/man/man1"
-  printf '%s\n' "brew uninstall jq"
-fi
 
 
 #######################
