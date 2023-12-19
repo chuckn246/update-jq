@@ -31,16 +31,14 @@ sum_file="sha256sum.txt"
 #######################
 # Define clean_up function
 clean_up () {
-  printf '%s' "Would you like to delete the tmp_dir and the downloaded files? (Yy/Nn) "
-  read -r choice
-  case "${choice}" in
-    [yY]|[yY]es)
-      printf '%s\n' "Cleaning up install files"
-      cd && rm -rf "${tmp_dir}"
+  case "${2}" in
+    [dD]|[dD]ebug)
+      printf '%s\n' "Exiting without deleting files from ${tmp_dir}"
       exit "${1}"
       ;;
     *)
-      printf '%s\n' "Exiting without deleting files from ${tmp_dir}"
+      printf '%s\n' "Cleaning up install files"
+      cd && rm -rf "${tmp_dir}"
       exit "${1}"
       ;;
   esac
@@ -75,17 +73,15 @@ case "$(uname -s)" in
   "Darwin")
       case "$(uname -p)" in
         "arm")
-          # Currently no arm releases
-          # See: https://github.com/jqlang/jq/issues/2386
-          jq_binary="jq-osx-amd64"
+          jq_binary="jq-macos-arm64"
           ;;
         *)
-          jq_binary="jq-osx-amd64"
+          jq_binary="jq-macos-amd64"
           ;;
       esac
     ;;
   "Linux")
-    jq_binary="jq-linux64"
+    jq_binary="jq-linux-amd64"
     ;;
   *)
     code_red "[ERROR] Unsupported OS. Exiting"
@@ -137,10 +133,7 @@ curl -sL -o "${tmp_dir}/${sum_file}" "${jq_url}/${sum_file}"
 #######################
 # Verify shasum
 printf '%s\n' "Verifying ${jq_binary}"
-sums=$(awk -v var="${jq_binary}" '$0 ~ var { gsub(/ /, "  ", $0); print }' "${sum_file}")
-#sums=$(grep "${jq_binary}" "${sum_file}" | sed 's/ /  /g')
-
-if ! echo "${sums}" | shasum -qc; then
+if ! shasum -qc --ignore-missing "${sum_file}"; then
   code_red "[ERROR] Problem with checksum!"
   clean_up 1
 fi
