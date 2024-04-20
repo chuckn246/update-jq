@@ -26,7 +26,7 @@ sum_file="sha256sum.txt"
 
 
 # FUNCTIONS
-# Define clean_up function
+# delete temporary install files
 clean_up () {
   case "${2}" in
     [dD]|[dD]ebug)
@@ -110,22 +110,21 @@ fi
 
 # PREPARE
 # Create directories
-[ ! -d "${bin_dir}" ] && mkdir -p "${bin_dir}"
-[ ! -d "${man_dir}" ] && mkdir -p "${man_dir}"
+[ ! -d "${bin_dir}" ] && install -m 0700 -d "${bin_dir}"
+[ ! -d "${man_dir}" ] && install -m 0700 -d "${man_dir}"
 
 
 # INSTALL
 # Install jq binary
 if [ -f "${tmp_dir}/${jq_binary}" ]; then
   mv "${tmp_dir}/${jq_binary}" "${bin_dir}/jq"
-  chmod 700 "${bin_dir}/jq"
+  chmod 0700 "${bin_dir}/jq"
 fi
 
-
-# MAN PAGE
+# Install man page
 printf '%s\n' "Installing jq man page"
 curl -s -o "${man_dir}/${jq_man}" "${jq_man_url}"
-chmod 600 "${man_dir}/${jq_man}"
+chmod 0600 "${man_dir}/${jq_man}"
 
 
 # VERSION CHECK
