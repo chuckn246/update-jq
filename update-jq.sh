@@ -4,9 +4,7 @@
 # Author: Chuck Nemeth
 # https://jqlang.github.io/jq/
 
-#######################
 # VARIABLES
-#######################
 bin_dir="$HOME/.local/bin"
 man_dir="$HOME/.local/share/man/man1"
 tmp_dir="$(mktemp -d /tmp/jq.XXXXXXXX)"
@@ -27,9 +25,7 @@ jq_man="jq.1"
 sum_file="sha256sum.txt"
 
 
-#######################
 # FUNCTIONS
-#######################
 # Define clean_up function
 clean_up () {
   case "${2}" in
@@ -45,31 +41,13 @@ clean_up () {
   esac
 }
 
-# green output
-code_grn () {
-  tput setaf 2
-  printf '%s\n' "${1}"
-  tput sgr0
-}
-
-# red output
-code_red () {
-  tput setaf 1
-  printf '%s\n' "${1}"
-  tput sgr0
-}
-
-# yellow output
-code_yel () {
-  tput setaf 3
-  printf '%s\n' "${1}"
-  tput sgr0
-}
+# colored output
+code_grn () { tput setaf 2; printf '%s\n' "${1}"; tput sgr0; }
+code_red () { tput setaf 1; printf '%s\n' "${1}"; tput sgr0; }
+code_yel () { tput setaf 3; printf '%s\n' "${1}"; tput sgr0; }
 
 
-#######################
 # OS CHECK
-#######################
 case "$(uname -s)" in
   "Darwin")
       case "$(uname -p)" in
@@ -90,9 +68,7 @@ case "$(uname -s)" in
 esac
 
 
-#######################
 # PATH CHECK
-#######################
 case :$PATH: in
   *:"${bin_dir}":*)  ;;  # do nothing
   *)
@@ -103,9 +79,7 @@ case :$PATH: in
 esac
 
 
-#######################
 # VERSION CHECK
-#######################
 cd "${tmp_dir}" || exit
 
 if [ "${jq_version}" = "${jq_installed_version}" ]; then
@@ -119,19 +93,13 @@ else
 fi
 
 
-#######################
 # DOWNLOAD
-#######################
 printf '%s\n' "Downloading the jq binary and verification files"
-
-# Download the things
 curl -sL -o "${tmp_dir}/${jq_binary}" "${jq_url}/${jq_binary}"
 curl -sL -o "${tmp_dir}/${sum_file}" "${jq_url}/${sum_file}"
 
 
-#######################
 # VERIFY
-#######################
 # Verify shasum
 printf '%s\n' "Verifying ${jq_binary}"
 if ! shasum -qc --ignore-missing "${sum_file}"; then
@@ -140,25 +108,13 @@ if ! shasum -qc --ignore-missing "${sum_file}"; then
 fi
 
 
-#######################
 # PREPARE
-#######################
-# Create bin dir if it doesn't exist
-if [ ! -d "${bin_dir}" ]; then
-  mkdir -p "${bin_dir}"
-  chmod 700 "${bin_dir}"
-fi
-
-# Create man dir if it doesn't exist
-if [ ! -d "${man_dir}" ]; then
-  mkdir -p "${man_dir}"
-  chmod 700 "${man_dir}"
-fi
+# Create directories
+[ ! -d "${bin_dir}" ] && mkdir -p "${bin_dir}"
+[ ! -d "${man_dir}" ] && mkdir -p "${man_dir}"
 
 
-#######################
 # INSTALL
-#######################
 # Install jq binary
 if [ -f "${tmp_dir}/${jq_binary}" ]; then
   mv "${tmp_dir}/${jq_binary}" "${bin_dir}/jq"
@@ -166,24 +122,18 @@ if [ -f "${tmp_dir}/${jq_binary}" ]; then
 fi
 
 
-#######################
 # MAN PAGE
-#######################
 printf '%s\n' "Installing jq man page"
 curl -s -o "${man_dir}/${jq_man}" "${jq_man_url}"
 chmod 600 "${man_dir}/${jq_man}"
 
 
-#######################
 # VERSION CHECK
-#######################
 code_grn "Done!"
 code_grn "Installed Version: $(jq --version)"
 
 
-#######################
 # CLEAN UP
-#######################
 clean_up 0
 
 # vim: ft=sh ts=2 sts=2 sw=2 sr et
